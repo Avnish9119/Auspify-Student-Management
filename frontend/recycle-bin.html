@@ -1,0 +1,289 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recycle Bin | Auspify Student Management</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f4f7fb;
+            color: #1e293b;
+            padding: 30px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        button {
+            border: none;
+            border-radius: 6px;
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            background: #e2e8f0;
+            color: #1e293b;
+        }
+
+        .restore-btn {
+            background: #16a34a;
+            color: white;
+            margin: 3px;
+        }
+
+        .permanent-btn {
+            background: #dc2626;
+            color: white;
+            margin: 3px;
+        }
+
+        .refresh-btn {
+            background: #2563eb;
+            color: white;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 3px 15px rgba(0, 0, 0, 0.05);
+            overflow-x: auto;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            color: #475569;
+            font-size: 14px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 850px;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 14px 12px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+        }
+
+        th {
+            background: #f8fafc;
+            color: #475569;
+        }
+
+        .empty {
+            text-align: center;
+            padding: 35px;
+            color: #64748b;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 23px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>♻️ Recycle Bin</h1>
+                <p class="subtitle">View, restore, or permanently delete students.</p>
+            </div>
+
+            <div>
+                <button class="back-btn" onclick="goBack()">← Dashboard</button>
+                <button class="refresh-btn" onclick="loadDeletedStudents()">Refresh</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <p id="message" class="message">Loading deleted students...</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Roll No.</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Branch</th>
+                        <th>Semester</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="studentTable">
+                    <tr>
+                        <td colspan="8" class="empty">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5001/api/students";
+
+        function goBack() {
+            window.location.href = "admin-dashboard.html";
+        }
+
+        function escapeHTML(value) {
+            return String(value ?? "").replace(/[&<>"']/g, char => ({
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#39;"
+            })[char]);
+        }
+
+        async function loadDeletedStudents() {
+            const table = document.getElementById("studentTable");
+            const message = document.getElementById("message");
+
+            message.textContent = "Loading deleted students...";
+            table.innerHTML =
+                '<tr><td colspan="8" class="empty">Loading...</td></tr>';
+
+            try {
+                const response = await fetch(`${API_URL}/recycle-bin`);
+                const students = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(students.error || "Could not load Recycle Bin.");
+                }
+
+                if (!Array.isArray(students) || students.length === 0) {
+                    message.textContent = "Recycle Bin is empty.";
+                    table.innerHTML =
+                        '<tr><td colspan="8" class="empty">No deleted students found.</td></tr>';
+                    return;
+                }
+
+                message.textContent = `${students.length} deleted student(s) found.`;
+
+                table.innerHTML = students.map(student => `
+                    <tr>
+                        <td>${escapeHTML(student.id)}</td>
+                        <td>${escapeHTML(student.name)}</td>
+                        <td>${escapeHTML(student.roll_no)}</td>
+                        <td>${escapeHTML(student.email)}</td>
+                        <td>${escapeHTML(student.phone)}</td>
+                        <td>${escapeHTML(student.branch)}</td>
+                        <td>${escapeHTML(student.semester)}</td>
+                        <td>
+                            <button class="restore-btn"
+                                onclick="restoreStudent(${Number(student.id)})">
+                                Restore
+                            </button>
+                            <button class="permanent-btn"
+                                onclick="permanentlyDeleteStudent(${Number(student.id)})">
+                                Delete Forever
+                            </button>
+                        </td>
+                    </tr>
+                `).join("");
+            } catch (error) {
+                message.textContent = "Unable to load Recycle Bin.";
+                table.innerHTML =
+                    '<tr><td colspan="8" class="empty">Check whether the backend is running.</td></tr>';
+                console.error(error);
+            }
+        }
+
+        async function restoreStudent(id) {
+            if (!confirm("Restore this student to the main student list?")) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/${id}/restore`, {
+                    method: "PUT"
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || "Restore failed.");
+                }
+
+                alert("Student restored successfully!");
+                loadDeletedStudents();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        async function permanentlyDeleteStudent(id) {
+            if (!confirm(
+                "Permanently delete this student? This action cannot be undone."
+            )) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/${id}/permanent`, {
+                    method: "DELETE"
+                });
+
+                const result = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(result.error || "Permanent deletion failed.");
+                }
+
+                alert("Student permanently deleted.");
+                loadDeletedStudents();
+            } catch (error) {
+                alert(error.message);
+            }
+        }
+
+        loadDeletedStudents();
+    </script>
+</body>
+</html>

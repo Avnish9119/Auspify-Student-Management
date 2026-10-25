@@ -1,0 +1,465 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard | Student Management System</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: #f1f5f9;
+      color: #172554;
+    }
+
+    header {
+      background: #101b3f;
+      color: white;
+      padding: 20px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      font-size: 22px;
+    }
+
+    header p {
+      color: #cbd5e1;
+      font-size: 13px;
+      margin-top: 5px;
+    }
+
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 11px 16px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .logout {
+      background: #ef4444;
+      color: white;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+
+    .welcome {
+      margin-bottom: 25px;
+    }
+
+    .welcome h2 {
+      font-size: 26px;
+      margin-bottom: 8px;
+    }
+
+    .welcome p {
+      color: #64748b;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 18px;
+      margin-bottom: 25px;
+    }
+
+    .stat-card {
+      background: white;
+      padding: 22px;
+      border-radius: 14px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .stat-card p {
+      color: #64748b;
+      font-size: 14px;
+    }
+
+    .stat-card h3 {
+      font-size: 30px;
+      margin-top: 12px;
+      color: #2456a6;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .panel-heading {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .panel-heading h2 {
+      font-size: 20px;
+    }
+
+    #search {
+      padding: 11px 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      width: 260px;
+      max-width: 100%;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 650px;
+    }
+
+    th, td {
+      padding: 14px 12px;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f8fafc;
+      color: #475569;
+    }
+
+    #message {
+      margin: 15px 0;
+      font-size: 14px;
+      color: #475569;
+    }
+
+    @media (max-width: 600px) {
+      header {
+        padding: 18px 20px;
+      }
+
+      .welcome h2 {
+        font-size: 22px;
+      }
+
+      .panel {
+        padding: 15px;
+      }
+
+      #search {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div>
+      <h1>Student Management System</h1>
+      <p>Administrator Panel</p>
+    </div>
+    <button class="logout" id="logoutButton">Logout</button>
+  </header>
+
+  <main>
+    <section class="welcome">
+      <h2>Welcome, Admin!</h2>
+      <p>Manage and monitor student records from one place.</p>
+    </section>
+
+    <section class="stats">
+      <div class="stat-card">
+        <p>Total Students</p>
+        <h3 id="totalStudents">—</h3>
+      </div>
+      <div class="stat-card">
+        <p>Department</p>
+        <h3>IT</h3>
+      </div>
+      <div class="stat-card">
+        <p>Account Role</p>
+        <h3 style="font-size:22px">Admin</h3>
+      </div>
+    </section>
+
+    <section class="panel">
+      
+<div class="panel-heading">
+  <h2>Student Records</h2>
+  <button
+    type="button"
+    onclick="window.location.href='add-student.html'"
+    style="background:#2456a6;color:white;"
+  >
+    + Add Student
+  </button>
+
+<button
+  type="button"
+  onclick="window.location.href='recycle-bin.html'"
+  style="background: #dc2626; color: white; padding: 10px 16px; border: none; border-radius: 6px; cursor: pointer;"
+>
+  ♻️ Recycle Bin
+</button>
+
+  <input
+    id="search"
+    type="search"
+    placeholder="Search name or roll number..."
+    aria-label="Search student records"
+  >
+</div>
+
+
+      <p id="message" role="status">Loading student records...</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Roll Number</th>
+              <th>Email</th>
+              <th>Branch</th>
+              <th>Semester</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="studentTable"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "http://localhost:5001/api/students";
+    const currentUserText = sessionStorage.getItem("loggedInUser");
+
+    let students = [];
+
+    // Check whether the user has logged in as an administrator.
+    if (!currentUserText) {
+      window.location.replace("login.html");
+    } else {
+      try {
+        const currentUser = JSON.parse(currentUserText);
+
+        if (currentUser.role !== "admin") {
+          window.location.replace("login.html");
+        } else {
+          loadStudents();
+        }
+      } catch (error) {
+        sessionStorage.removeItem("loggedInUser");
+        window.location.replace("login.html");
+      }
+    }
+
+    async function loadStudents() {
+      const message = document.getElementById("message");
+
+      try {
+        const response = await fetch(API_URL);
+
+        if (!response.ok) {
+          throw new Error("Unable to load student records.");
+        }
+
+        students = await response.json();
+
+        document.getElementById("totalStudents").textContent =
+          students.length;
+
+        renderStudents(students);
+        message.textContent = students.length
+          ? "Student records loaded successfully."
+          : "No student records found yet.";
+
+      } catch (error) {
+        message.textContent =
+          "Could not load records. Please check the backend and MySQL.";
+        console.error(error);
+      }
+    }
+
+function renderStudents(list) {
+  const tbody = document.getElementById("studentTable");
+  tbody.replaceChildren();
+
+  list.forEach(function (student) {
+    const row = document.createElement("tr");
+
+    [
+      student.id,
+      student.name,
+      student.roll_no,
+      student.email || "—",
+      student.branch || "—",
+      student.semester || "—"
+    ].forEach(function (value) {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.appendChild(cell);
+    });
+
+    // Actions column
+    const actionsCell = document.createElement("td");
+
+    const editButton = document.createElement("button");
+    editButton.textContent = "Edit";
+    editButton.style.cssText =
+      "background:#2456a6;color:white;margin-right:6px;padding:8px 10px;";
+    editButton.addEventListener("click", function () {
+      window.location.href = "edit-student.html?id=" +
+        encodeURIComponent(student.id);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.style.cssText =
+      "background:#dc2626;color:white;padding:8px 10px;";
+    deleteButton.addEventListener("click", function () {
+      deleteStudent(student.id, student.name);
+    });
+
+    actionsCell.appendChild(editButton);
+    actionsCell.appendChild(deleteButton);
+    row.appendChild(actionsCell);
+
+    tbody.appendChild(row);
+  });
+}
+
+async function deleteStudent(id, name) {
+  const confirmed = confirm(
+  'Move "' + name + '" to the Recycle Bin?'
+);
+
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(
+      "http://localhost:5001/api/students/" + encodeURIComponent(id),
+      { method: "DELETE" }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Unable to delete student.");
+    }
+
+    alert("Student moved to Recycle Bin successfully!");
+    await loadStudents();
+
+  } catch (error) {
+    alert(error.message);
+    console.error("Delete error:", error);
+  }
+}
+
+
+
+
+function renderStudents(list) {
+  const tbody = document.getElementById("studentTable");
+  tbody.replaceChildren();
+
+  list.forEach(function (student) {
+    const row = document.createElement("tr");
+
+    [
+      student.id,
+      student.name,
+      student.roll_no,
+      student.email || "—",
+      student.branch || "—",
+      student.semester || "—"
+    ].forEach(function (value) {
+      const cell = document.createElement("td");
+      cell.textContent = value;
+      row.appendChild(cell);
+    });
+
+    // Actions column
+    const actionsCell = document.createElement("td");
+
+    const editButton = document.createElement("button");
+    editButton.textContent = "Edit";
+    editButton.style.cssText =
+      "background:#2456a6;color:white;margin-right:6px;padding:8px 10px;";
+    editButton.addEventListener("click", function () {
+      window.location.href = "edit-student.html?id=" +
+        encodeURIComponent(student.id);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.style.cssText =
+      "background:#dc2626;color:white;padding:8px 10px;";
+    deleteButton.addEventListener("click", function () {
+      deleteStudent(student.id, student.name);
+    });
+
+    actionsCell.appendChild(editButton);
+    actionsCell.appendChild(deleteButton);
+    row.appendChild(actionsCell);
+
+    tbody.appendChild(row);
+  });
+}
+
+async function deleteStudent(id, name) {
+  const confirmed = confirm(
+    'Are you sure you want to permanently delete "' + name + '"?'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch(
+      "http://localhost:5001/api/students/" + encodeURIComponent(id),
+      { method: "DELETE" }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Unable to delete student.");
+    }
+
+    alert("Student deleted successfully!");
+    await loadStudents();
+
+  } catch (error) {
+    alert(error.message);
+    console.error("Delete error:", error);
+  }
+}
+
+   
+  </script>
+</body>
+</html>

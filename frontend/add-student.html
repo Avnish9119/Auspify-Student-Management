@@ -1,0 +1,334 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Student | Student Management System</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #f1f5f9;
+      color: #172554;
+    }
+
+    header {
+      background: #101b3f;
+      color: white;
+      padding: 20px 5%;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      font-size: 21px;
+    }
+
+    header p {
+      margin-top: 5px;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    main {
+      max-width: 760px;
+      margin: 35px auto;
+      padding: 0 20px;
+    }
+
+    .form-card {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 5px 25px rgba(0, 0, 0, 0.06);
+    }
+
+    h2 {
+      margin-bottom: 8px;
+      font-size: 25px;
+    }
+
+    .subtitle {
+      color: #64748b;
+      margin-bottom: 28px;
+      font-size: 14px;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .field {
+      min-width: 0;
+    }
+
+    .full-width {
+      grid-column: 1 / -1;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #334155;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+      background: white;
+    }
+
+    input:focus, select:focus {
+      border-color: #2456a6;
+      box-shadow: 0 0 0 3px rgba(36, 86, 166, 0.12);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+      flex-wrap: wrap;
+    }
+
+    button, .back-link {
+      display: inline-block;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 18px;
+      font-size: 14px;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .save-btn {
+      background: #2456a6;
+      color: white;
+      flex: 1;
+    }
+
+    .save-btn:hover {
+      background: #173e80;
+    }
+
+    .back-link {
+      background: #e2e8f0;
+      color: #172554;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    #message {
+      margin-top: 18px;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 560px) {
+      .form-card {
+        padding: 22px 18px;
+      }
+
+      .form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .full-width {
+        grid-column: auto;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div>
+      <h1>Student Management System</h1>
+      <p>Administrator Panel</p>
+    </div>
+    <a class="back-link" href="admin-dashboard.html">Back to Dashboard</a>
+  </header>
+
+  <main>
+    <section class="form-card">
+      <h2>Add New Student</h2>
+      <p class="subtitle">Enter the student's details below.</p>
+
+      <form id="studentForm">
+        <div class="form-grid">
+          <div class="field">
+            <label for="name">Full Name *</label>
+            <input id="name" name="name" type="text"
+              placeholder="Enter full name" maxlength="100" required>
+          </div>
+
+          <div class="field">
+            <label for="roll_no">Roll Number *</label>
+            <input id="roll_no" name="roll_no" type="text"
+              placeholder="Enter roll number" maxlength="20" required>
+          </div>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email"
+              placeholder="student@example.com" maxlength="100">
+          </div>
+
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" type="tel"
+              placeholder="Enter phone number" maxlength="15">
+          </div>
+
+          <div class="field">
+            <label for="branch">Branch</label>
+            <select id="branch" name="branch">
+              <option value="">Select branch</option>
+              <option value="IT">Information Technology (IT)</option>
+              <option value="CSE">Computer Science (CSE)</option>
+              <option value="AIML">AI & Machine Learning</option>
+              <option value="ECE">Electronics (ECE)</option>
+              <option value="ME">Mechanical Engineering</option>
+              <option value="CE">Civil Engineering</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="semester">Semester</label>
+            <select id="semester" name="semester">
+              <option value="">Select semester</option>
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+              <option value="3">Semester 3</option>
+              <option value="4">Semester 4</option>
+              <option value="5">Semester 5</option>
+              <option value="6">Semester 6</option>
+              <option value="7">Semester 7</option>
+              <option value="8">Semester 8</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <a href="admin-dashboard.html" class="back-link">Cancel</a>
+          <button class="save-btn" id="saveButton" type="submit">
+            Save Student
+          </button>
+        </div>
+
+        <p id="message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "http://localhost:5001/api/students";
+    const form = document.getElementById("studentForm");
+    const message = document.getElementById("message");
+    const saveButton = document.getElementById("saveButton");
+
+    // Check for an admin login in this browser session.
+    let user = null;
+
+    try {
+      user = JSON.parse(sessionStorage.getItem("loggedInUser"));
+    } catch (error) {
+      user = null;
+    }
+
+    if (!user || user.role !== "admin") {
+      window.location.replace("login.html");
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const student = {
+        name: document.getElementById("name").value.trim(),
+        roll_no: document.getElementById("roll_no").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        branch: document.getElementById("branch").value,
+        semester: document.getElementById("semester").value
+      };
+
+      if (!student.name || !student.roll_no) {
+        message.style.color = "#dc2626";
+        message.textContent = "Name and roll number are required.";
+        return;
+      }
+
+      student.semester = student.semester
+        ? Number(student.semester)
+        : null;
+
+      saveButton.disabled = true;
+      message.style.color = "#b45309";
+      message.textContent = "Saving student...";
+
+      try {
+        const response = await fetch(API_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(student)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || data.message || "Could not save student."
+          );
+        }
+
+        message.style.color = "#15803d";
+        message.textContent =
+          "Student added successfully! Student ID: " + data.id;
+
+        form.reset();
+
+      } catch (error) {
+        message.style.color = "#dc2626";
+
+        if (error.message.includes("Duplicate entry")) {
+          message.textContent =
+            "This roll number already exists. Please use a different one.";
+        } else {
+          message.textContent = error.message;
+        }
+
+        console.error("Add student error:", error);
+      } finally {
+        saveButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

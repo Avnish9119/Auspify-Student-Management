@@ -1,0 +1,337 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Student | Student Management System</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: #f1f5f9;
+      color: #172554;
+    }
+
+    header {
+      background: #101b3f;
+      color: white;
+      padding: 20px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    header h1 {
+      font-size: 21px;
+    }
+
+    main {
+      max-width: 760px;
+      margin: 35px auto;
+      padding: 0 20px;
+    }
+
+    .card {
+      background: white;
+      padding: 30px;
+      border-radius: 16px;
+      box-shadow: 0 5px 25px rgba(0,0,0,.06);
+    }
+
+    h2 {
+      margin-bottom: 8px;
+      font-size: 25px;
+    }
+
+    .subtitle {
+      color: #64748b;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .field label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #334155;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: white;
+      font-size: 14px;
+    }
+
+    input:focus, select:focus {
+      outline: 2px solid #bfdbfe;
+      border-color: #2456a6;
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 25px;
+    }
+
+    button, .back {
+      padding: 13px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+    }
+
+    .save {
+      flex: 1;
+      background: #2456a6;
+      color: white;
+    }
+
+    .save:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
+
+    .back {
+      background: #e2e8f0;
+      color: #172554;
+    }
+
+    #message {
+      margin-top: 18px;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-wrap: anywhere;
+    }
+
+    @media (max-width: 560px) {
+      .card {
+        padding: 22px 18px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Student Management System</h1>
+    <a class="back" href="admin-dashboard.html">Back to Dashboard</a>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Edit Student</h2>
+      <p class="subtitle">Update the student details and save your changes.</p>
+
+      <form id="editForm">
+        <div class="grid">
+          <div class="field">
+            <label for="name">Full Name *</label>
+            <input id="name" maxlength="100" required>
+          </div>
+
+          <div class="field">
+            <label for="roll_no">Roll Number *</label>
+            <input id="roll_no" maxlength="20" required>
+          </div>
+
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" maxlength="100">
+          </div>
+
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" type="tel" maxlength="15">
+          </div>
+
+          <div class="field">
+            <label for="branch">Branch</label>
+            <select id="branch">
+              <option value="">Select branch</option>
+              <option value="IT">Information Technology (IT)</option>
+              <option value="CSE">Computer Science (CSE)</option>
+              <option value="AIML">AI & Machine Learning</option>
+              <option value="ECE">Electronics (ECE)</option>
+              <option value="ME">Mechanical Engineering</option>
+              <option value="CE">Civil Engineering</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="semester">Semester</label>
+            <select id="semester">
+              <option value="">Select semester</option>
+              <option value="1">Semester 1</option>
+              <option value="2">Semester 2</option>
+              <option value="3">Semester 3</option>
+              <option value="4">Semester 4</option>
+              <option value="5">Semester 5</option>
+              <option value="6">Semester 6</option>
+              <option value="7">Semester 7</option>
+              <option value="8">Semester 8</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <a class="back" href="admin-dashboard.html">Cancel</a>
+          <button class="save" id="saveButton" type="submit">
+            Update Student
+          </button>
+        </div>
+
+        <p id="message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const API_URL = "http://localhost:5001/api/students";
+    const form = document.getElementById("editForm");
+    const message = document.getElementById("message");
+    const saveButton = document.getElementById("saveButton");
+
+    let studentId = null;
+
+    try {
+      const user = JSON.parse(sessionStorage.getItem("loggedInUser"));
+
+      if (!user || user.role !== "admin") {
+        window.location.replace("login.html");
+      }
+    } catch (error) {
+      window.location.replace("login.html");
+    }
+
+    async function loadStudent() {
+      const params = new URLSearchParams(window.location.search);
+      studentId = params.get("id");
+
+      if (!studentId || !/^\d+$/.test(studentId)) {
+        message.style.color = "#dc2626";
+        message.textContent = "Invalid student ID. Return to the dashboard.";
+        saveButton.disabled = true;
+        return;
+      }
+
+      try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error("Could not load student records.");
+
+        const students = await response.json();
+        const student = students.find(
+          item => String(item.id) === studentId
+        );
+
+        if (!student) throw new Error("Student record not found.");
+
+        document.getElementById("name").value = student.name || "";
+        document.getElementById("roll_no").value = student.roll_no || "";
+        document.getElementById("email").value = student.email || "";
+        document.getElementById("phone").value = student.phone || "";
+        document.getElementById("branch").value = student.branch || "";
+        document.getElementById("semester").value =
+          student.semester == null ? "" : String(student.semester);
+
+        message.style.color = "#15803d";
+        message.textContent = "Student details loaded.";
+
+      } catch (error) {
+        message.style.color = "#dc2626";
+        message.textContent = error.message;
+        saveButton.disabled = true;
+      }
+    }
+
+    form.addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      if (!studentId) return;
+
+      const student = {
+        name: document.getElementById("name").value.trim(),
+        roll_no: document.getElementById("roll_no").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        phone: document.getElementById("phone").value.trim(),
+        branch: document.getElementById("branch").value,
+        semester: document.getElementById("semester").value
+      };
+
+      if (!student.name || !student.roll_no) {
+        message.style.color = "#dc2626";
+        message.textContent = "Name and roll number are required.";
+        return;
+      }
+
+      student.semester = student.semester
+        ? Number(student.semester)
+        : null;
+
+      saveButton.disabled = true;
+      message.style.color = "#b45309";
+      message.textContent = "Updating student...";
+
+      try {
+        const response = await fetch(
+          API_URL + "/" + encodeURIComponent(studentId),
+          {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(student)
+          }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Unable to update student.");
+        }
+
+        message.style.color = "#15803d";
+        message.textContent = "Student updated successfully!";
+
+        setTimeout(() => {
+          window.location.href = "admin-dashboard.html";
+        }, 900);
+
+      } catch (error) {
+        message.style.color = "#dc2626";
+        message.textContent = error.message;
+      } finally {
+        saveButton.disabled = false;
+      }
+    });
+
+    loadStudent();
+  </script>
+</body>
+</html>
