@@ -1,15 +1,15 @@
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const db = require("./db");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Middleware
 app.use(cors());
 app.use(express.json());
-const path = require("path");
-
 app.use(express.static(path.join(__dirname, "../frontend")));
 
 // Test backend
@@ -17,6 +17,7 @@ app.get("/api/test", (req, res) => {
     res.json({ message: "Correct backend is running" });
 });
 
+// Serve login page
 app.get("/", (req, res) => {
     res.sendFile(path.join(__dirname, "../frontend/login.html"));
 });
@@ -41,6 +42,7 @@ app.post("/api/login", (req, res) => {
     db.query(sql, [username, password, role], (err, results) => {
         if (err) {
             console.error("LOGIN DATABASE ERROR:", err);
+
             return res.status(500).json({
                 success: false,
                 message: "Database error"
@@ -54,7 +56,7 @@ app.post("/api/login", (req, res) => {
             });
         }
 
-        res.json({
+        return res.json({
             success: true,
             message: "Login successful",
             user: results[0]
@@ -62,7 +64,7 @@ app.post("/api/login", (req, res) => {
     });
 });
 
-// Get active students only
+// Get active students
 app.get("/api/students", (req, res) => {
     const sql = `
         SELECT * FROM students
@@ -71,23 +73,29 @@ app.get("/api/students", (req, res) => {
     `;
 
     db.query(sql, (err, results) => {
-    if (err) {
-        console.error("FETCH STUDENTS DATABASE ERROR:", err);
+        if (err) {
+            console.error("FETCH STUDENTS DATABASE ERROR:", err);
 
-        return res.status(500).json({
-            error: "Database error while fetching students"
-        });
-    }
+            return res.status(500).json({
+                error: "Database error while fetching students"
+            });
+        }
 
-    res.json(results);
-});
+        return res.json(results);
+    });
 });
 
 // Add a student
 app.post("/api/students", (req, res) => {
     const { name, roll_no, email, phone, branch, semester } = req.body;
 
-    if (!name || !name.trim() || !roll_no || !String(roll_no).trim()) {
+    if (
+        typeof name !== "string" ||
+        !name.trim() ||
+        roll_no === undefined ||
+        roll_no === null ||
+        !String(roll_no).trim()
+    ) {
         return res.status(400).json({
             error: "Name and roll number are required"
         });
@@ -95,39 +103,46 @@ app.post("/api/students", (req, res) => {
 
     const sql = `
         INSERT INTO students
-        (name, roll_no, email, phone, branch, semester)
+            (name, roll_no, email, phone, branch, semester)
         VALUES (?, ?, ?, ?, ?, ?)
     `;
 
-    db.query(
-        sql,
-        [
-            name.trim(),
-            String(roll_no).trim(),
-            email || null,
-            phone || null,
-            branch || null,
-            semester || null
-        ],
-        (err, result) => {
-            if (err) {
-                if (err.code === "ER_DUP_ENTRY") {
-                    return res.status(409).json({
-                        error: "This roll number already exists"
-                    });
-                }
+    const values = [
+        name.trim(),
+        String(roll_no).trim(),
+        email || null,
+        phone || null,
+        branch || null,
+        semester === "" || semester === undefined || semester === null
+            ? null
+            : semester
+    ];
 
-                return res.status(500).json({
-                    error: "Database error while adding student"
+    db.query(sql, values, (err, result) => {
+        if (err) {
+            // This prints the real database error in Render logs.
+            console.error("ADD STUDENT DATABASE ERROR:", err);
+
+            if (err.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({
+                    error: "This roll number already exists"
                 });
             }
 
-            res.status(201).json({
-                message: "Student added successfully",
-                id: result.insertId
+            // Return a useful error message for debugging.
+            return res.status(500).json({
+                error:
+                    err.sqlMessage ||
+                    err.message ||
+                    "Database error while adding student"
             });
         }
-    );
+
+        return res.status(201).json({
+            message: "Student added successfully",
+            id: result.insertId
+        });
+    });
 });
 
 // Edit an active student
@@ -136,10 +151,18 @@ app.put("/api/students/:id", (req, res) => {
     const { name, roll_no, email, phone, branch, semester } = req.body;
 
     if (!/^\d+$/.test(id)) {
-        return res.status(400).json({ error: "Invalid student ID" });
+        return res.status(400).json({
+            error: "Invalid student ID"
+        });
     }
 
-    if (!name || !name.trim() || !roll_no || !String(roll_no).trim()) {
+    if (
+        typeof name !== "string" ||
+        !name.trim() ||
+        roll_no === undefined ||
+        roll_no === null ||
+        !String(roll_no).trim()
+    ) {
         return res.status(400).json({
             error: "Name and roll number are required"
         });
@@ -152,39 +175,46 @@ app.put("/api/students/:id", (req, res) => {
         WHERE id = ? AND is_deleted = 0
     `;
 
-    db.query(
-        sql,
-        [
-            name.trim(),
-            String(roll_no).trim(),
-            email || null,
-            phone || null,
-            branch || null,
-            semester || null,
-            id
-        ],
-        (err, result) => {
-            if (err) {
-                if (err.code === "ER_DUP_ENTRY") {
-                    return res.status(409).json({
-                        error: "This roll number already exists"
-                    });
-                }
+    const values = [
+        name.trim(),
+        String(roll_no).trim(),
+        email || null,
+        phone || null,
+        branch || null,
+        semester === "" || semester === undefined || semester === null
+            ? null
+            : semester,
+        id
+    ];
 
-                return res.status(500).json({
-                    error: "Database error while updating student"
+    db.query(sql, values, (err, result) => {
+        if (err) {
+            console.error("UPDATE STUDENT DATABASE ERROR:", err);
+
+            if (err.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({
+                    error: "This roll number already exists"
                 });
             }
 
-            if (result.affectedRows === 0) {
-                return res.status(404).json({
-                    error: "Active student not found"
-                });
-            }
-
-            res.json({ message: "Student updated successfully" });
+            return res.status(500).json({
+                error:
+                    err.sqlMessage ||
+                    err.message ||
+                    "Database error while updating student"
+            });
         }
-    );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "Active student not found"
+            });
+        }
+
+        return res.json({
+            message: "Student updated successfully"
+        });
+    });
 });
 
 // Move student to Recycle Bin
@@ -192,47 +222,57 @@ app.delete("/api/students/:id", (req, res) => {
     const { id } = req.params;
 
     if (!/^\d+$/.test(id)) {
-        return res.status(400).json({ error: "Invalid student ID" });
+        return res.status(400).json({
+            error: "Invalid student ID"
+        });
     }
 
-    db.query(
-        "UPDATE students SET is_deleted = 1 WHERE id = ? AND is_deleted = 0",
-        [id],
-        (err, result) => {
-            if (err) {
-                return res.status(500).json({
-                    error: "Database error while deleting student"
-                });
-            }
+    const sql = `
+        UPDATE students
+        SET is_deleted = 1
+        WHERE id = ? AND is_deleted = 0
+    `;
 
-            if (result.affectedRows === 0) {
-                return res.status(404).json({
-                    error: "Active student not found"
-                });
-            }
+    db.query(sql, [id], (err, result) => {
+        if (err) {
+            console.error("DELETE STUDENT DATABASE ERROR:", err);
 
-            res.json({
-                message: "Student moved to Recycle Bin successfully"
+            return res.status(500).json({
+                error: "Database error while deleting student"
             });
         }
-    );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "Active student not found"
+            });
+        }
+
+        return res.json({
+            message: "Student moved to Recycle Bin successfully"
+        });
+    });
 });
 
 // Get students in Recycle Bin
 app.get("/api/students/recycle-bin", (req, res) => {
-    console.log("RECYCLE BIN ROUTE REGISTERED");
-    db.query(
-        "SELECT * FROM students WHERE is_deleted = 1 ORDER BY id DESC",
-        (err, results) => {
-            if (err) {
-                return res.status(500).json({
-                    error: "Could not load Recycle Bin"
-                });
-            }
+    const sql = `
+        SELECT * FROM students
+        WHERE is_deleted = 1
+        ORDER BY id DESC
+    `;
 
-            res.json(results);
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error("RECYCLE BIN DATABASE ERROR:", err);
+
+            return res.status(500).json({
+                error: "Could not load Recycle Bin"
+            });
         }
-    );
+
+        return res.json(results);
+    });
 });
 
 // Restore student from Recycle Bin
@@ -240,34 +280,42 @@ app.put("/api/students/:id/restore", (req, res) => {
     const { id } = req.params;
 
     if (!/^\d+$/.test(id)) {
-        return res.status(400).json({ error: "Invalid student ID" });
+        return res.status(400).json({
+            error: "Invalid student ID"
+        });
     }
 
-    db.query(
-        "UPDATE students SET is_deleted = 0 WHERE id = ? AND is_deleted = 1",
-        [id],
-        (err, result) => {
-            if (err) {
-                if (err.code === "ER_DUP_ENTRY") {
-                    return res.status(409).json({
-                        error: "Cannot restore: this roll number is already in use"
-                    });
-                }
+    const sql = `
+        UPDATE students
+        SET is_deleted = 0
+        WHERE id = ? AND is_deleted = 1
+    `;
 
-                return res.status(500).json({
-                    error: "Database error while restoring student"
+    db.query(sql, [id], (err, result) => {
+        if (err) {
+            console.error("RESTORE STUDENT DATABASE ERROR:", err);
+
+            if (err.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({
+                    error: "Cannot restore: this roll number is already in use"
                 });
             }
 
-            if (result.affectedRows === 0) {
-                return res.status(404).json({
-                    error: "Deleted student not found"
-                });
-            }
-
-            res.json({ message: "Student restored successfully" });
+            return res.status(500).json({
+                error: "Database error while restoring student"
+            });
         }
-    );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "Deleted student not found"
+            });
+        }
+
+        return res.json({
+            message: "Student restored successfully"
+        });
+    });
 });
 
 // Permanently delete student from Recycle Bin
@@ -275,33 +323,38 @@ app.delete("/api/students/:id/permanent", (req, res) => {
     const { id } = req.params;
 
     if (!/^\d+$/.test(id)) {
-        return res.status(400).json({ error: "Invalid student ID" });
+        return res.status(400).json({
+            error: "Invalid student ID"
+        });
     }
 
-    db.query(
-        "DELETE FROM students WHERE id = ? AND is_deleted = 1",
-        [id],
-        (err, result) => {
-            if (err) {
-                return res.status(500).json({
-                    error: "Database error while permanently deleting student"
-                });
-            }
+    const sql = `
+        DELETE FROM students
+        WHERE id = ? AND is_deleted = 1
+    `;
 
-            if (result.affectedRows === 0) {
-                return res.status(404).json({
-                    error: "Deleted student not found"
-                });
-            }
+    db.query(sql, [id], (err, result) => {
+        if (err) {
+            console.error("PERMANENT DELETE DATABASE ERROR:", err);
 
-            res.json({
-                message: "Student permanently deleted"
+            return res.status(500).json({
+                error: "Database error while permanently deleting student"
             });
         }
-    );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                error: "Deleted student not found"
+            });
+        }
+
+        return res.json({
+            message: "Student permanently deleted"
+        });
+    });
 });
 
 // Start server
 app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
+    console.log(`Server running on port ${PORT}`);
 });
