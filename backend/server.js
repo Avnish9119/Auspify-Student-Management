@@ -71,14 +71,16 @@ app.get("/api/students", (req, res) => {
     `;
 
     db.query(sql, (err, results) => {
-        if (err) {
-            return res.status(500).json({
-                error: "Database error while fetching students"
-            });
-        }
+    if (err) {
+        console.error("FETCH STUDENTS DATABASE ERROR:", err);
 
-        res.json(results);
-    });
+        return res.status(500).json({
+            error: "Database error while fetching students"
+        });
+    }
+
+    res.json(results);
+});
 });
 
 // Add a student
