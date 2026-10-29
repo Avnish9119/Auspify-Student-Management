@@ -361,7 +361,7 @@ async function deleteStudent(id, name) {
 
   try {
     const response = await fetch(
-      "http://localhost:5001/api/students/" + encodeURIComponent(id),
+      "https://auspify-student-management-api.onrender.com/api/students/" + encodeURIComponent(id),
       { method: "DELETE" }
     );
 
