@@ -87,6 +87,7 @@ app.get("/api/students", (req, res) => {
 
 // Add a student
 app.post("/api/students", (req, res) => {
+    console.log("ADD STUDENT REQUEST RECEIVED:", req.body);
     const { name, roll_no, email, phone, branch, semester } = req.body;
 
     if (
